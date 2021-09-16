@@ -10,6 +10,7 @@ request.onupgradeneeded = function (event) {
 request.onsuccess = function (event) {
   db = event.target.result;
     if (navigator.onLine) {
+        uploadFunds();
     }
 };
 
@@ -24,4 +25,37 @@ function saveRecord(record) {
   const fundObjectStore = transaction.objectStore("new_fund");
 
   fundObjectStore.add(record);
+}
+
+function uploadFunds() {
+    const transaction = db.transaction(['new_fund'], 'readwrite');
+    const fundObjectStore = transaction.objectStore('new_fund');
+    const getAll = fundObjectStore.getAll();
+
+    getAll.onsuccess = function () {
+        if (getAll.result.length > 0) {
+          fetch("/api/transaction", {
+            method: "POST",
+            body: JSON.stringify(getAll.result),
+            headers: {
+              Accept: "application/json, text/plain, */*",
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => response.json())
+            .then((serverResponse) => {
+              if (serverResponse.message) {
+                throw new Error(serverResponse);
+              }
+              const transaction = db.transaction(["new_fund"], "readwrite");
+              const fundObjectStore = transaction.objectStore("new_fund");
+              fundObjectStore.clear();
+    
+              alert("All saved funds has been submitted!");
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }
+      };
 }
