@@ -59,3 +59,5 @@ function uploadFunds() {
         }
       };
 }
+
+window.addEventListener('online', uploadFunds);
